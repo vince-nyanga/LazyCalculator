@@ -1,5 +1,5 @@
 using System.Threading.RateLimiting;
-using static System.Console;
+using Serilog;
 
 namespace LazyCalculator
 {
@@ -14,16 +14,17 @@ namespace LazyCalculator
 
         public async ValueTask<int> AddAsync(int a, int b)
         {
-            ForegroundColor = ConsoleColor.Magenta;
-            WriteLine($"I am going to add two numbers {a} and {b}");
-            ResetColor();
+            Log.Debug("Request to add {a} and {b}", a, b);
 
             using var lease = await _rateLimiter.AcquireAsync(permitCount: 1);
 
             if (lease.IsAcquired)
             {
+                Log.Debug("Acquired lease for {a} and {b}", a, b);
                 return a + b;
             }
+
+            Log.Warning("Lease not acquired for {a} and {b}", a, b);
 
             var retryMessage = lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfterValue)
                 ? $"Retry after {retryAfterValue} ms"
