@@ -8,18 +8,15 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .CreateLogger();
 
-var options = new SlidingWindowRateLimiterOptions
+var fixedWindowRateLimiter = new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
 {
     PermitLimit = 1,
-    Window = TimeSpan.FromSeconds(3),
-    SegmentsPerWindow = 1,
+    Window = TimeSpan.FromSeconds(5),
     QueueLimit = 2,
     QueueProcessingOrder = QueueProcessingOrder.OldestFirst
-};
+});
 
-var rateLimiter = new SlidingWindowRateLimiter(options);
-
-var calculator = new Calculator(rateLimiter);
+var calculator = new Calculator(fixedWindowRateLimiter);
 
 var tasks = Enumerable.Range(0, 5)
     .Select(_ => AddRandomNumbersAsync(calculator));
@@ -35,7 +32,7 @@ static async Task AddRandomNumbersAsync(Calculator calculator)
 
         var result = await calculator.AddAsync(a, b);
 
-        Log.Information("Result for {a} and {b} is {result}", a, b, result);
+        Log.Information("Result for {A} and {B} is {Result}", a, b, result);
     }
     catch (InvalidOperationException)
     {
